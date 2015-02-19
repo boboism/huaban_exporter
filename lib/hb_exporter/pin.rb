@@ -26,7 +26,7 @@ module HbExporter
       file_path = File.join(path, export_file_name)
       return true if File.size?(file_path)
 
-      Tempfile.create(export_file_name) do |tmpfile|
+      Tempfile.open(export_file_name) do |tmpfile|
         tmpfile << HTTParty.get(image_url)
         tmpfile.flush
         FileUtils.cp tmpfile, file_path
