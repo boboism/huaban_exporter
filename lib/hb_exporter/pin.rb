@@ -1,4 +1,5 @@
 require 'tempfile'
+require 'timeout'
 
 module HbExporter
   class Pin
@@ -22,14 +23,23 @@ module HbExporter
     end
 
 
+    EXPORT_TIMEOUT = 3
+    MAX_RETRY_COUNT = 5 
     def export path: ''
       file_path = File.join(path, export_file_name)
-      return true if File.size?(file_path)
-
-      Tempfile.open(export_file_name) do |tmpfile|
-        tmpfile << HTTParty.get(image_url)
-        tmpfile.flush
-        FileUtils.cp tmpfile, file_path
+      retry_count = 0
+      while !!!File.size?(file_path) && retry_count < MAX_RETRY_COUNT
+        begin
+          Timeout::timeout(EXPORT_TIMEOUT) do 
+            Tempfile.open(export_file_name) do |tmpfile|
+              tmpfile << HTTParty.get(image_url)
+              tmpfile.flush
+              FileUtils.cp tmpfile, file_path
+            end
+          end
+        rescue Timeout::Error
+          retry_count += 1
+        end
       end
       true
     end
