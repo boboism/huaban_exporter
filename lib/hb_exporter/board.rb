@@ -30,7 +30,12 @@ module HbExporter
       opts = {
         headers: { 'X-Requested-With' => 'XMLHttpRequest' }
       }
-      HTTParty.get(api_path, opts)['board'].tap do |data|
+      default_values = {
+        'title'       => '',
+        'description' => '',
+        'pin_count'   => 0
+      }
+      default_values.merge(HTTParty.get(api_path, opts)['board']||{}).tap do |data|
         @title      = data['title']
         @desc       = data['description']
         @pins_count = data['pin_count']
@@ -68,11 +73,9 @@ module HbExporter
 
     def export_pins
       board_path = prepare_export_path
-      counter    = pins.size
 
       puts "downloading ".cyan << title
       progress_bar.reset
-
       THREAD_COUNT.times.map do 
         Thread.new do
           while !pins.empty? && pin = pins.shift
@@ -80,7 +83,7 @@ module HbExporter
             progress_bar.increment
           end
         end
-      end.each(&:join)
+      end.each(&:join) if pins.size > 0
 
       progress_bar.finish
     end

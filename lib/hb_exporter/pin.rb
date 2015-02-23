@@ -27,9 +27,9 @@ module HbExporter
     MAX_RETRY_COUNT = 5 
     def export path: ''
       file_path = File.join(path, export_file_name)
-      return true if !!!File.size?(file_path)
+      return true unless File.size?(file_path).nil?
       retry_count = 0
-      while !!!File.size?(file_path) && retry_count < MAX_RETRY_COUNT
+      while File.size?(file_path).nil? && retry_count < MAX_RETRY_COUNT
         begin
           Timeout::timeout(EXPORT_TIMEOUT) do 
             Tempfile.open(export_file_name) do |tmpfile|
