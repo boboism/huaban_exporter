@@ -64,6 +64,8 @@ module HbExporter
     end
 
 
+    THREAD_COUNT = 10
+
     def export_pins
       board_path = prepare_export_path
       counter    = pins.size
@@ -71,22 +73,17 @@ module HbExporter
       puts "downloading ".cyan << title
       progress_bar.reset
 
-      pin_grps = pins.group_by.with_index { |_, i| i % THREAD_COUNT }.each_value do |pins|
-        Thread.new {
-          pins.each do |pin|
+      THREAD_COUNT.times.map do 
+        Thread.new do
+          while !pins.empty? && pin = pins.shift
             pin.export path: board_path
             progress_bar.increment
-            counter -= 1
           end
-        }
-      end
-
-      while counter > 0; end
+        end
+      end.each(&:join)
 
       progress_bar.finish
     end
-
-    THREAD_COUNT = 10
 
 
     private
